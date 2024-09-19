@@ -1,118 +1,108 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+//import React, { useState } from 'react';
+//import { View, SafeAreaView, FlatList } from 'react-native';
+//import 'react-native-vector-icons/MaterialIcons';
+//import TaskInput from './src/components/TaskInput';
+//import TaskList from './src/components/TaskList';
+//import { styles } from './appStyles';
+//
+//const App = () => {
+//  const [tasks, setTasks] = useState([]);
+//
+//  const addTask = (task) => {
+//    setTasks([...tasks, { id: Date.now(), text: task, completed: false }]);
+//  };
+//
+//  const toggleCompleteTask = (taskId) => {
+//    setTasks(tasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task));
+//  };
+//
+//  const deleteTask = (taskId) => {
+//    setTasks(tasks.filter(task => task.id !== taskId));
+//  };
+//
+//  return (
+//    <SafeAreaView style={styles.container}>
+//      <TaskInput addTask={addTask} />
+//      <FlatList
+//        data={tasks}
+//        renderItem={({ item }) => (
+//          <TaskList task={item} toggleCompleteTask={toggleCompleteTask} deleteTask={deleteTask} />
+//        )}
+//        keyExtractor={item => item.id.toString()}
+//      />
+//    </SafeAreaView>
+//  );
+//};
+//
+//export default App;
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import React, { useState, useEffect } from 'react';
+import { View, SafeAreaView, FlatList } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import TaskInput from './src/components/TaskInput';
+import TaskList from './src/components/TaskList';
+import { styles } from './appStyles';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App = () => {
+  const [tasks, setTasks] = useState([]);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  useEffect(() => {
+    // Load tasks from AsyncStorage when the app starts
+    const loadTasks = async () => {
+      try {
+        const savedTasks = await AsyncStorage.getItem('tasks');
+        if (savedTasks) {
+          setTasks(JSON.parse(savedTasks));
+        }
+      } catch (e) {
+        console.error('Failed to load tasks:', e);
+      }
+    };
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    loadTasks();
+  }, []);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const saveTasks = async (newTasks) => {
+    try {
+      await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+    } catch (e) {
+      console.error('Failed to save tasks:', e);
+    }
+  };
+
+  const addTask = (task) => {
+    const newTasks = [...tasks, { id: Date.now(), text: task, completed: false }];
+    setTasks(newTasks);
+    saveTasks(newTasks);
+  };
+
+  const toggleCompleteTask = (taskId) => {
+    const updatedTasks = tasks.map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+  };
+
+  const deleteTask = (taskId) => {
+    const updatedTasks = tasks.filter(task => task.id !== taskId);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <TaskInput addTask={addTask} />
+      <FlatList
+        data={tasks}
+        renderItem={({ item }) => (
+          <TaskList task={item} toggleCompleteTask={toggleCompleteTask} deleteTask={deleteTask} />
+        )}
+        keyExtractor={item => item.id.toString()}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
     </SafeAreaView>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
